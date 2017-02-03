@@ -66,7 +66,8 @@ namespace SmarterHome
             // Set up a listener for when the client receives a new frame.
             _grabber.NewFrameProvided += (s, e) =>
             {
-                if (_mode == AppMode.EmotionsWithClientFaceDetect)
+
+                if (_fuseClientRemoteResults)
                 {
                     // Local face detection. 
                     var rects = _localFaceDetector.DetectMultiScale(e.Frame.Image);
@@ -85,8 +86,10 @@ namespace SmarterHome
                     // new frame now with the most recent analysis available. 
                     if (_fuseClientRemoteResults)
                     {
-                        //RightImage.Source = VisualizeResult(e.Frame);
-                        MessageArea.Text = "Is Smiling + " + current_face[0].FaceAttributes.Smile.ToString();
+                        RightImage.Source = VisualizeResult(e.Frame);
+                        if(current_face != null)
+                            if(current_face.Length > 0)
+                            MessageArea.Text = "Is Smiling + " + current_face[0].FaceAttributes.Smile.ToString();
                     }
                 }));
 
@@ -132,7 +135,7 @@ namespace SmarterHome
                         // Display the image and visualization in the right pane. 
                         if (!_fuseClientRemoteResults)
                         {
-                            //RightImage.Source = VisualizeResult(e.Frame);
+                            RightImage.Source = VisualizeResult(e.Frame);
                             if(current_face != null)
                                 MessageArea.Text = "Is Smiling + " + current_face[0].FaceAttributes.Smile.ToString();
                         }
@@ -162,6 +165,7 @@ namespace SmarterHome
             // Output. 
             return new LiveCameraResult { Faces = faces };
         }
+
 
 
         private BitmapSource VisualizeResult(VideoFrame frame)
@@ -229,6 +233,7 @@ namespace SmarterHome
 
             _mode = AppMode.Faces;
             _grabber.AnalysisFunction = FacesAnalysisFunction;
+            _fuseClientRemoteResults = true;
 
             // Create API clients. 
             _faceClient = new FaceServiceClient(ConfigurationSettings.AppSettings.Get("faceapikey"));

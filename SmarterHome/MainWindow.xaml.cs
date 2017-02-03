@@ -80,16 +80,13 @@ namespace SmarterHome
                 this.Dispatcher.BeginInvoke((Action)(() =>
                 {
                     // Display the image in the left pane.
-                    LeftImage.Source = e.Frame.Image.ToBitmapSource();
+                    //LeftImage.Source = e.Frame.Image.ToBitmapSource();
 
                     // If we're fusing client-side face detection with remote analysis, show the
                     // new frame now with the most recent analysis available. 
                     if (_fuseClientRemoteResults)
                     {
-                        RightImage.Source = VisualizeResult(e.Frame);
-                        if(current_face != null)
-                            if(current_face.Length > 0)
-                            MessageArea.Text = "Is Smiling + " + current_face[0].FaceAttributes.Smile.ToString();
+                        DisplayImageVisualization(e.Frame);                        
                     }
                 }));
 
@@ -135,9 +132,8 @@ namespace SmarterHome
                         // Display the image and visualization in the right pane. 
                         if (!_fuseClientRemoteResults)
                         {
-                            RightImage.Source = VisualizeResult(e.Frame);
-                            if(current_face != null)
-                                MessageArea.Text = "Is Smiling + " + current_face[0].FaceAttributes.Smile.ToString();
+                            DisplayImageVisualization(e.Frame);
+                            
                         }
                     }
                 }));
@@ -250,7 +246,22 @@ namespace SmarterHome
 
             await _grabber.StartProcessingCameraAsync(0);
         }
-        
+
+        public void DisplayImageVisualization(VideoFrame frame)
+        {
+            RightImage.Source = VisualizeResult(frame);
+            if (current_face != null)
+                sayHello();
+        }
+
+        public void sayHello()
+        {
+            MessageArea.Text = "Hello Mr. Dandy";
+            if (current_face != null)
+                if (current_face.Length > 0)
+                    MessageArea.Text += "\nIs Smiling + " + current_face[0].FaceAttributes.Smile.ToString();
+        }
+
 
         private Face CreateFace(FaceRectangle rect)
         {

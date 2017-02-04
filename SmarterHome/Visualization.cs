@@ -101,7 +101,7 @@ namespace SmarterHome
             return DrawOverlay(baseImage, drawAction);
         }
 
-        public static BitmapSource DrawFaces(BitmapSource baseImage, Microsoft.ProjectOxford.Face.Contract.Face[] faces, Scores[] emotionScores, string[] celebName)
+        public static BitmapSource DrawFaces(BitmapSource baseImage, Microsoft.ProjectOxford.Face.Contract.Face[] faces, Scores[] emotionScores, string[] celebName, string[] names)
         {
             if (faces == null)
             {
@@ -122,7 +122,15 @@ namespace SmarterHome
 
                     if (face.FaceAttributes != null)
                     {
-                        text += Aggregation.SummarizeFaceAttributes(face.FaceAttributes);
+                        if(i >= names.Length)
+                        {
+                            text += Aggregation.SummarizeFaceAttributes(face.FaceAttributes, "");
+                        }
+                        else
+                        {
+                            text += Aggregation.SummarizeFaceAttributes(face.FaceAttributes, names[i]);
+                        }
+                        
                     }
 
                     if (emotionScores?[i] != null)

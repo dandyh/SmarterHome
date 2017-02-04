@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="dandy-application-db" Class="UserDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="AppSettings" ConnectionString="Data Source=dandy-server.database.windows.net;Initial Catalog=dandy-application-db;Persist Security Info=True;User ID=dandy" SettingsObjectName="SmarterHome.Properties.Settings" SettingsPropertyName="dandy_application_dbConnectionString" Provider="System.Data.SqlClient" />
+  <Table Name="dbo.[User]" Member="Users">
+    <Type Name="User">
+      <Column Name="username" Type="System.String" DbType="VarChar(50) NOT NULL" IsPrimaryKey="true" CanBeNull="false" />
+      <Column Name="password" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="name" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="photofile" Type="System.String" DbType="VarChar(MAX)" CanBeNull="true" />
+      <Column Name="age" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="gender" Type="System.String" DbType="VarChar(10)" CanBeNull="true" />
+      <Column Name="speakerguid" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="speakerphrase" Type="System.String" DbType="VarChar(MAX)" CanBeNull="true" />
+      <Column Name="familyid" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+    </Type>
+  </Table>
+</Database>

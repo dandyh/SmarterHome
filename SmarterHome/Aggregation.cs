@@ -64,9 +64,10 @@ namespace SmarterHome
             return string.Format("{0}: {1:N1}", bestEmotion.Item1, bestEmotion.Item2);
         }
 
-        public static string SummarizeFaceAttributes(FaceAttributes attr)
+        public static string SummarizeFaceAttributes(FaceAttributes attr, string name)
         {
             List<string> attrs = new List<string>();
+            attrs.Add(name);
             if (attr.Gender != null) attrs.Add(attr.Gender);
             if (attr.Age > 0) attrs.Add(attr.Age.ToString());
             if (attr.HeadPose != null)

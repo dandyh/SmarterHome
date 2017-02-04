@@ -24,29 +24,52 @@ using Microsoft.ProjectOxford.Face.Contract;
 using Microsoft.ProjectOxford.Vision;
 using VideoFrameAnalyzer;
 using System.Configuration;
+using System.Speech.Synthesis;
+using System.IO;
 
 namespace SmarterHome
 {
-    
+    public class FamilyUser
+    {
+        public string name { get; set; }
+        public Guid faceid;        
+        public FamilyUser(string name, Guid faceid)
+        {
+            this.name = name;
+            this.faceid = faceid;            
+
+    }
+
+    };
+
+    public class FaceExtended : Face
+    {
+        public string name { get; set; }
+    }
 
 
     public partial class MainWindow : System.Windows.Window
-    {        
-        private FaceServiceClient _faceClient = null;
-        
+    {
+        private FaceServiceClient _faceClient = null;        
+
         private readonly FrameGrabber<LiveCameraResult> _grabber = null;
         private static readonly ImageEncodingParam[] s_jpegParams = {
             new ImageEncodingParam(ImwriteFlags.JpegQuality, 60)
         };
         private readonly CascadeClassifier _localFaceDetector = new CascadeClassifier();
-        private bool _fuseClientRemoteResults;
+        private bool _fuseClientRemoteResults = true;
         private LiveCameraResult _latestResultsToDisplay = null;
         private AppMode _mode;
         private DateTime _startTime;
         bool AutoStopEnabled = true;
         TimeSpan AutoStopTime = new TimeSpan(0, 1, 0);
         TimeSpan AnalysisInterval = new TimeSpan(0, 0, 3);
-        private Face[] current_face;
+        private Face[] current_faces;
+        private UserDataContext dataContext;
+        private List<User> users;
+        private List<FamilyUser> family_users = new List<FamilyUser>();
+
+        public string[] names { get; set; }
 
         public enum AppMode
         {
@@ -59,7 +82,9 @@ namespace SmarterHome
         public MainWindow()
         {
             InitializeComponent();
-            
+
+            txtFamilyId.Text = "handoko";
+
             // Create grabber. 
             _grabber = new FrameGrabber<LiveCameraResult>();
 
@@ -86,12 +111,12 @@ namespace SmarterHome
                     // new frame now with the most recent analysis available. 
                     if (_fuseClientRemoteResults)
                     {
-                        DisplayImageVisualization(e.Frame);                        
+                        DisplayImageVisualization(e.Frame);
                     }
                 }));
 
                 // See if auto-stop should be triggered. 
-                
+
                 if (AutoStopEnabled && (DateTime.Now - _startTime) > AutoStopTime)
                 {
                     _grabber.StopProcessingAsync();
@@ -112,7 +137,7 @@ namespace SmarterHome
                         string apiName = "";
                         string message = e.Exception.Message;
                         var faceEx = e.Exception as FaceAPIException;
-                        var emotionEx = e.Exception as Microsoft.ProjectOxford.Common.ClientException;                        
+                        var emotionEx = e.Exception as Microsoft.ProjectOxford.Common.ClientException;
                         if (faceEx != null)
                         {
                             apiName = "Face";
@@ -133,7 +158,7 @@ namespace SmarterHome
                         if (!_fuseClientRemoteResults)
                         {
                             DisplayImageVisualization(e.Frame);
-                            
+
                         }
                     }
                 }));
@@ -153,13 +178,50 @@ namespace SmarterHome
             var attrs = new List<FaceAttributeType> { FaceAttributeType.Age,
                 FaceAttributeType.Gender, FaceAttributeType.HeadPose, FaceAttributeType.Smile };
             Face[] faces = await _faceClient.DetectAsync(jpg, returnFaceAttributes: attrs);
-            current_face = faces;
+
+            current_faces = faces;
+
+            names = new string[faces.Length];
+            int index = 0;
+
+            Guid[] familyFaces = new Guid[family_users.Count];
+            //To avoid wasting api calls for already checked family members
+            foreach (FamilyUser usr in family_users)
+            {                
+                familyFaces[index] = usr.faceid;
+                index++;
+            }
+
+
+
+            //Verify againts the family member
+            for(int i =0; i<faces.Length;i++)
+            {
+                names[i] = "Unknown";
+
+                SimilarFace[] similarFaces = await _faceClient.FindSimilarAsync(faces[i].FaceId, familyFaces);
+
+                foreach (SimilarFace sf in similarFaces)
+                {
+                    if(sf.Confidence > 0.5)
+                    {
+                        foreach(FamilyUser fu in family_users)
+                        {
+                            if(fu.faceid == sf.FaceId)
+                            {
+                                names[i] = fu.name;                                
+                                break;
+                            }
+                        }                        
+                    }
+                }
+            }
 
 
             // Count the API call. 
             //Properties.Settings.Default.FaceAPICallCount++;
             // Output. 
-            return new LiveCameraResult { Faces = faces };
+            return new LiveCameraResult { Faces = faces, Names = names};
         }
 
 
@@ -183,7 +245,7 @@ namespace SmarterHome
                     MatchAndReplaceFaceRectangles(result.Faces, clientFaces);
                 }
 
-                visImage = Visualization.DrawFaces(visImage, result.Faces, result.EmotionScores, result.CelebrityNames);
+                visImage = Visualization.DrawFaces(visImage, result.Faces, result.EmotionScores, result.CelebrityNames, names);
                 visImage = Visualization.DrawTags(visImage, result.Tags);
             }
 
@@ -218,6 +280,46 @@ namespace SmarterHome
 
         private async void btnStart_Click(object sender, RoutedEventArgs e)
         {
+            //Check whether family exists
+            dataContext = new UserDataContext();
+            users = dataContext.Users.Where(x => x.familyid == txtFamilyId.Text.Trim()).ToList();
+            if (users.Count == 0)
+            {
+                MessageBox.Show("Family not found!", "Error", MessageBoxButton.OK);
+                return;
+            }
+
+            // Create API clients. 
+            _faceClient = new FaceServiceClient(ConfigurationSettings.AppSettings.Get("faceapikey"));
+//new FaceServiceClient()
+
+
+            //Upload all the family member photos and get their face id
+            try
+            {
+                foreach (User usr in users)
+                {
+                    using (var fileStream = File.OpenRead(usr.photofile))
+                    {
+                        var faces = await _faceClient.DetectAsync(fileStream, true, false);
+                        if (faces.Count() > 0)
+                        {
+                            FamilyUser temp = new FamilyUser(usr.name, faces[0].FaceId);
+                            family_users.Add(temp);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK);
+                return;
+            }
+
+            ////label.Content = "Please wait...";
+            if (users != null)
+            {
+            }
             //Check whether camera exists
             int numCameras = _grabber.GetNumCameras();
 
@@ -228,12 +330,8 @@ namespace SmarterHome
             }
 
             _mode = AppMode.Faces;
-            _grabber.AnalysisFunction = FacesAnalysisFunction;
-            _fuseClientRemoteResults = true;
+            _grabber.AnalysisFunction = FacesAnalysisFunction;                     
 
-            // Create API clients. 
-            _faceClient = new FaceServiceClient(ConfigurationSettings.AppSettings.Get("faceapikey"));
-            
             // How often to analyze. 
             _grabber.TriggerAnalysisOnInterval(AnalysisInterval);
 
@@ -245,21 +343,23 @@ namespace SmarterHome
 
 
             await _grabber.StartProcessingCameraAsync(0);
+
+
         }
 
         public void DisplayImageVisualization(VideoFrame frame)
         {
             RightImage.Source = VisualizeResult(frame);
-            if (current_face != null)
+            if (current_faces != null)
                 sayHello();
         }
 
         public void sayHello()
         {
-            MessageArea.Text = "Hello Mr. Dandy";
-            if (current_face != null)
-                if (current_face.Length > 0)
-                    MessageArea.Text += "\nIs Smiling + " + current_face[0].FaceAttributes.Smile.ToString();
+            //MessageArea.Text = "Hello Mr. Dandy";
+            //if (current_face != null)
+            //    if (current_face.Length > 0)
+            //        MessageArea.Text += "\nIs Smiling + " + current_face[0].FaceAttributes.Smile.ToString();
         }
 
 
@@ -304,5 +404,27 @@ namespace SmarterHome
                 }
             };
         }
+
+        private void txtFamilyId_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (txtFamilyId.Text.ToLower() == "familyid")
+            {
+                txtFamilyId.Text = "";
+            }
+        }
+
+        private void button_Click(object sender, RoutedEventArgs e)
+        {
+            using (SpeechSynthesizer synth = new SpeechSynthesizer())
+            {
+
+                // Configure the audio output. 
+                synth.SetOutputToDefaultAudioDevice();
+
+                // Speak a string synchronously.
+                synth.Speak("Hello Dandy, do you want to set the usual?");
+            }
+        }
+
     }
 }

@@ -46,5 +46,7 @@ namespace SmarterHome
         public Microsoft.ProjectOxford.Emotion.Contract.Scores[] EmotionScores { get; set; } = null;
         public string[] CelebrityNames { get; set; } = null;
         public Microsoft.ProjectOxford.Vision.Contract.Tag[] Tags { get; set; } = null;
+
+        public string[] Names { get; set; } = null;
     }
 }

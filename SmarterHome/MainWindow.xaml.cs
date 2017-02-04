@@ -41,7 +41,6 @@ namespace SmarterHome
     }
 
     };
-
     public class FaceExtended : Face
     {
         public string name { get; set; }

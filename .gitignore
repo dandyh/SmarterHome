@@ -241,3 +241,5 @@ ModelManifest.xml
 # FAKE - F# Make
 .fake/
 /SmarterHome/App.config
+/SmarterHome/Properties/Settings.Designer.cs
+/SmarterHome/Properties

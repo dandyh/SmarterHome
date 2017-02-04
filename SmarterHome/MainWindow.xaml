@@ -7,12 +7,11 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="500" Width="525">
     <Grid>
-        <TextBox x:Name="txtFamilyId" HorizontalAlignment="Left" Height="23" Margin="42,30,0,0" TextWrapping="Wrap" Text="FamilyId" VerticalAlignment="Top" Width="434" GotFocus="txtFamilyId_GotFocus"/>
+        <TextBox x:Name="txtFamilyId" HorizontalAlignment="Left" Height="23" Margin="26,30,0,0" TextWrapping="Wrap" Text="FamilyId" VerticalAlignment="Top" Width="450" GotFocus="txtFamilyId_GotFocus"/>
         <!--<Image x:Name="LeftImage" HorizontalAlignment="Left" Height="212" Margin="10,37,0,0" VerticalAlignment="Top" Width="217"/>-->
-        <Image x:Name="RightImage" HorizontalAlignment="Left" Height="283" Margin="42,161,0,0" VerticalAlignment="Top" Width="434"/>
-        <TextBlock x:Name="MessageArea" HorizontalAlignment="Left" Margin="42,123,0,0" TextWrapping="Wrap" Text="aaa" VerticalAlignment="Top"/>
-        <Button x:Name="btnStart" Content="Start" HorizontalAlignment="Left" Margin="42,58,0,0" VerticalAlignment="Top" Width="434" Background="#1cb3bc" Click="btnStart_Click"/>
-        <Button x:Name="button" Content="Test" HorizontalAlignment="Left" Margin="42,92,0,0" VerticalAlignment="Top" Width="75" Click="button_Click"/>
+        <Image x:Name="RightImage" HorizontalAlignment="Left" Height="343" Margin="26,116,0,0" VerticalAlignment="Top" Width="468"/>
+        <TextBlock x:Name="MessageArea" HorizontalAlignment="Left" Margin="26,101,0,0" TextWrapping="Wrap" Text="" VerticalAlignment="Top" RenderTransformOrigin="0.559,-0.774"/>
+        <Button x:Name="btnStart" Content="Start" HorizontalAlignment="Left" Margin="26,58,0,0" VerticalAlignment="Top" Width="450" Background="#1cb3bc" Click="btnStart_Click"/>
 
     </Grid>
 </Window>

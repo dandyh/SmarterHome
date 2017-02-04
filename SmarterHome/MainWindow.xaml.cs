@@ -26,11 +26,13 @@ using VideoFrameAnalyzer;
 using System.Configuration;
 using System.Speech.Synthesis;
 using System.IO;
+using System.Windows.Threading;
 
 namespace SmarterHome
 {
     public class FamilyUser
     {
+        
         public string name { get; set; }
         public Guid faceid;        
         public FamilyUser(string name, Guid faceid)
@@ -49,7 +51,12 @@ namespace SmarterHome
 
     public partial class MainWindow : System.Windows.Window
     {
-        private FaceServiceClient _faceClient = null;        
+        public string unknown_name = "Unknown";
+        private FaceServiceClient _faceClient = null;
+        private DateTime _questionTime;
+        private bool personalQuestionHasBeenAsked = false;
+        private bool personalQuestionHasBeenAnswered = false;
+        TimeSpan ResponseTimeLimit = new TimeSpan(0, 0, 15);
 
         private readonly FrameGrabber<LiveCameraResult> _grabber = null;
         private static readonly ImageEncodingParam[] s_jpegParams = {
@@ -61,12 +68,13 @@ namespace SmarterHome
         private AppMode _mode;
         private DateTime _startTime;
         bool AutoStopEnabled = true;
-        TimeSpan AutoStopTime = new TimeSpan(0, 1, 0);
+        TimeSpan AutoStopTime = new TimeSpan(0, 5, 0);
         TimeSpan AnalysisInterval = new TimeSpan(0, 0, 3);
         private Face[] current_faces;
         private UserDataContext dataContext;
         private List<User> users;
         private List<FamilyUser> family_users = new List<FamilyUser>();
+        
 
         public string[] names { get; set; }
 
@@ -196,7 +204,7 @@ namespace SmarterHome
             //Verify againts the family member
             for(int i =0; i<faces.Length;i++)
             {
-                names[i] = "Unknown";
+                names[i] = unknown_name;
 
                 SimilarFace[] similarFaces = await _faceClient.FindSimilarAsync(faces[i].FaceId, familyFaces);
 
@@ -208,7 +216,7 @@ namespace SmarterHome
                         {
                             if(fu.faceid == sf.FaceId)
                             {
-                                names[i] = fu.name;                                
+                                names[i] = fu.name;                                                                                          
                                 break;
                             }
                         }                        
@@ -335,7 +343,7 @@ namespace SmarterHome
             _grabber.TriggerAnalysisOnInterval(AnalysisInterval);
 
             // Reset message. 
-            MessageArea.Text = "";
+            //MessageArea.Text = "";
 
             // Record start time, for auto-stop
             _startTime = DateTime.Now;
@@ -349,16 +357,58 @@ namespace SmarterHome
         public void DisplayImageVisualization(VideoFrame frame)
         {
             RightImage.Source = VisualizeResult(frame);
-            if (current_faces != null)
-                sayHello();
+            if (names != null && current_faces != null && current_faces.Length == 1 && names.Length == 1)
+                if(current_faces.Length == 1) 
+                    sayHello();
         }
 
-        public void sayHello()
+        public async void sayHello()
         {
-            //MessageArea.Text = "Hello Mr. Dandy";
-            //if (current_face != null)
-            //    if (current_face.Length > 0)
-            //        MessageArea.Text += "\nIs Smiling + " + current_face[0].FaceAttributes.Smile.ToString();
+                                   
+
+            if (personalQuestionHasBeenAsked && !personalQuestionHasBeenAnswered && (DateTime.Now - _questionTime) <= ResponseTimeLimit)
+            {
+                if(current_faces[0].FaceAttributes.Smile > 0.5 && !String.Equals(names[0], unknown_name))
+                {
+                    if (String.Equals(current_faces[0].FaceAttributes.Gender, "male"))
+                    {
+                        talk("Good choice Mr. " + names[0] + ", I will now set your default settings!");
+                    }
+                    else
+                    {
+                        talk("Good choice Mrs. " + names[0] + ", I will now set your default settings!");
+                    }
+                    personalQuestionHasBeenAnswered = true;
+                }
+                
+            }
+
+            if (!personalQuestionHasBeenAsked && current_faces.Length == 1 && !String.Equals(names[0], unknown_name))// && current_faces[0].FaceAttributes.Smile > 0.5)
+            {
+                string personal_message = "Would you like your morning setting?";
+                if (String.Equals(current_faces[0].FaceAttributes.Gender, "male"))
+                {
+                    MessageArea.Text = "Hello Mr. " + names[0];
+                    talk("Hello Mr. " + names[0] + ". " + personal_message);
+                }
+                else
+                {
+                    talk("Hello Mrs. " + names[0] + ". " + personal_message);
+                }
+
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+                timer.Start();
+                timer.Tick += (sender, args) =>
+                {
+                    timer.Stop();                    
+                };
+
+                //MessageArea.Text += String.Format("\n{0} is Smiling", names[0]);
+                personalQuestionHasBeenAsked = true;
+                // Record start time, for auto-stop
+                _questionTime = DateTime.Now;
+            }
+
         }
 
 
@@ -414,15 +464,19 @@ namespace SmarterHome
 
         private void button_Click(object sender, RoutedEventArgs e)
         {
-            using (SpeechSynthesizer synth = new SpeechSynthesizer())
-            {
+            
+        }
 
+        private async void talk(string words)
+        {
+            SpeechSynthesizer synth = new SpeechSynthesizer();
+            
                 // Configure the audio output. 
-                synth.SetOutputToDefaultAudioDevice();
+            synth.SetOutputToDefaultAudioDevice();
 
                 // Speak a string synchronously.
-                synth.Speak("Hello Dandy, do you want to set the usual?");
-            }
+            synth.SpeakAsync(words);
+            
         }
 
     }

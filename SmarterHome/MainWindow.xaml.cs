@@ -56,7 +56,7 @@ namespace SmarterHome
         private DateTime _questionTime;
         private bool personalQuestionHasBeenAsked = false;
         private bool personalQuestionHasBeenAnswered = false;
-        TimeSpan ResponseTimeLimit = new TimeSpan(0, 0, 15);
+        TimeSpan ResponseTimeLimit = new TimeSpan(0, 1, 0);
 
         private readonly FrameGrabber<LiveCameraResult> _grabber = null;
         private static readonly ImageEncodingParam[] s_jpegParams = {
@@ -368,15 +368,16 @@ namespace SmarterHome
 
             if (personalQuestionHasBeenAsked && !personalQuestionHasBeenAnswered && (DateTime.Now - _questionTime) <= ResponseTimeLimit)
             {
-                if(current_faces[0].FaceAttributes.Smile > 0.5 && !String.Equals(names[0], unknown_name))
+                string personal_message = "Sure thing {0} {1}, please notice that this action will cost you an additional 50 pence per hour.";
+                if (current_faces[0].FaceAttributes.Smile > 0.5 && !String.Equals(names[0], unknown_name))
                 {
                     if (String.Equals(current_faces[0].FaceAttributes.Gender, "male"))
                     {
-                        talk("Good choice Mr. " + names[0] + ", I will now set your default settings!");
+                        talk(String.Format(personal_message, "Mr.", names[0]));
                     }
                     else
                     {
-                        talk("Good choice Mrs. " + names[0] + ", I will now set your default settings!");
+                        talk(String.Format(personal_message, "Mrs.", names[0]));
                     }
                     personalQuestionHasBeenAnswered = true;
                 }
@@ -385,7 +386,7 @@ namespace SmarterHome
 
             if (!personalQuestionHasBeenAsked && current_faces.Length == 1 && !String.Equals(names[0], unknown_name))// && current_faces[0].FaceAttributes.Smile > 0.5)
             {
-                string personal_message = "Would you like your morning setting?";
+                string personal_message = "Your current house temperature is at 15 degrees, and we notice that you usualy like your home temperature at 25 degrees, would you like to turn the heating on?";
                 if (String.Equals(current_faces[0].FaceAttributes.Gender, "male"))
                 {
                     MessageArea.Text = "Hello Mr. " + names[0];

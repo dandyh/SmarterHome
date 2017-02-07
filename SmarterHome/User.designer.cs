@@ -98,6 +98,8 @@ namespace SmarterHome
 		
 		private string _familyid;
 		
+		private System.Nullable<int> _defaulthometemprature;
+		
     #region Extensibility Method Definitions
     partial void OnLoaded();
     partial void OnValidate(System.Data.Linq.ChangeAction action);
@@ -120,6 +122,8 @@ namespace SmarterHome
     partial void OnspeakerphraseChanged();
     partial void OnfamilyidChanging(string value);
     partial void OnfamilyidChanged();
+    partial void OndefaulthometempratureChanging(System.Nullable<int> value);
+    partial void OndefaulthometempratureChanged();
     #endregion
 		
 		public User()
@@ -303,6 +307,26 @@ namespace SmarterHome
 					this._familyid = value;
 					this.SendPropertyChanged("familyid");
 					this.OnfamilyidChanged();
+				}
+			}
+		}
+		
+		[global::System.Data.Linq.Mapping.ColumnAttribute(Storage="_defaulthometemprature", DbType="Int")]
+		public System.Nullable<int> defaulthometemprature
+		{
+			get
+			{
+				return this._defaulthometemprature;
+			}
+			set
+			{
+				if ((this._defaulthometemprature != value))
+				{
+					this.OndefaulthometempratureChanging(value);
+					this.SendPropertyChanging();
+					this._defaulthometemprature = value;
+					this.SendPropertyChanged("defaulthometemprature");
+					this.OndefaulthometempratureChanged();
 				}
 			}
 		}

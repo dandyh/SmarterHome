@@ -72,11 +72,12 @@ namespace SmarterHome
         TimeSpan AnalysisInterval = new TimeSpan(0, 0, 3);
         private Face[] current_faces;
         private UserDataContext dataContext;
+        private User inhouseUser;
         private List<User> users;
         private List<FamilyUser> family_users = new List<FamilyUser>();
-        
+        private SpeechSynthesizer synth;
 
-        public string[] names { get; set; }
+        public string[] names { get; set; }        
 
         public enum AppMode
         {
@@ -364,11 +365,15 @@ namespace SmarterHome
 
         public async void sayHello()
         {
-                                   
 
-            if (personalQuestionHasBeenAsked && !personalQuestionHasBeenAnswered && (DateTime.Now - _questionTime) <= ResponseTimeLimit)
+
+            if (inhouseUser != null && personalQuestionHasBeenAsked && !personalQuestionHasBeenAnswered && (DateTime.Now - _questionTime) <= ResponseTimeLimit)
             {
-                string personal_message = "Sure thing {0} {1}, please notice that this action will cost you an additional 50 pence per hour.";
+                string personal_message = "Nice smile! sure thing {0} {1}.";
+                if(inhouseUser.defaulthometemprature >= 15)
+                {
+                    personal_message += "Please notice that this action will cost you an additional 50 pence per hour.";
+                } 
                 if (current_faces[0].FaceAttributes.Smile > 0.5 && !String.Equals(names[0], unknown_name))
                 {
                     if (String.Equals(current_faces[0].FaceAttributes.Gender, "male"))
@@ -386,16 +391,22 @@ namespace SmarterHome
 
             if (!personalQuestionHasBeenAsked && current_faces.Length == 1 && !String.Equals(names[0], unknown_name))// && current_faces[0].FaceAttributes.Smile > 0.5)
             {
-                string personal_message = "Your current house temperature is at 15 degrees, and we notice that you usualy like your home temperature at 25 degrees, would you like to turn the heating on?";
+                string personal_message = "Your current house temperature is at 15 degrees, and we notice that you like your home temperature at {0} degrees. Would you like to {1} the heating?\nPlease smile to say yes.";
+                string tempMsg = "";
+
+                inhouseUser = dataContext.Users.SingleOrDefault(x => x.name == names[0] && x.familyid == txtFamilyId.Text);
+                personal_message = String.Format(personal_message, inhouseUser.defaulthometemprature,
+                    (inhouseUser.defaulthometemprature >= 15) ? "Turn on" : "Turn off"
+                );
                 if (String.Equals(current_faces[0].FaceAttributes.Gender, "male"))
                 {
-                    MessageArea.Text = "Hello Mr. " + names[0];
-                    talk("Hello Mr. " + names[0] + ". " + personal_message);
+                    tempMsg = "Hello Mr. " + names[0] + ".\n" + personal_message;
                 }
                 else
                 {
-                    talk("Hello Mrs. " + names[0] + ". " + personal_message);
+                    tempMsg = "Hello Mrs. " + names[0] + ".\n" + personal_message;
                 }
+                talk(tempMsg);                
 
                 var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
                 timer.Start();
@@ -470,14 +481,18 @@ namespace SmarterHome
 
         private async void talk(string words)
         {
-            SpeechSynthesizer synth = new SpeechSynthesizer();
-            
-                // Configure the audio output. 
+            if(synth != null)
+                synth.Dispose();
+
+            synth = new SpeechSynthesizer();
+
             synth.SetOutputToDefaultAudioDevice();
 
                 // Speak a string synchronously.
             synth.SpeakAsync(words);
             
+
+            MessageArea.Text = words;
         }
 
     }

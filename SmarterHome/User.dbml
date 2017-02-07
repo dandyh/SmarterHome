@@ -11,6 +11,7 @@
       <Column Name="speakerguid" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
       <Column Name="speakerphrase" Type="System.String" DbType="VarChar(MAX)" CanBeNull="true" />
       <Column Name="familyid" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="defaulthometemprature" Type="System.Int32" DbType="Int" CanBeNull="true" />
     </Type>
   </Table>
 </Database>

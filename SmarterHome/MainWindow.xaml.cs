@@ -369,7 +369,7 @@ namespace SmarterHome
 
             if (inhouseUser != null && personalQuestionHasBeenAsked && !personalQuestionHasBeenAnswered && (DateTime.Now - _questionTime) <= ResponseTimeLimit)
             {
-                string personal_message = "Nice smile! sure thing {0} {1}.";
+                string personal_message = "Nice smile! sure thing {0} {1}. ";
                 if(inhouseUser.defaulthometemprature >= 15)
                 {
                     personal_message += "Please notice that this action will cost you an additional 50 pence per hour.";
